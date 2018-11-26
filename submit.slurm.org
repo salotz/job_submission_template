@@ -55,11 +55,6 @@ task is set up in.
   1
 #+END_SRC
 
-** number of GPUs
-
-#+name: num-gpus
-#+BEGIN_SRC bash
-#+END_SRC
 
 *** examples
 
@@ -73,11 +68,19 @@ task is set up in.
 
 #+name: feature
 #+BEGIN_SRC bash
+  #SBATCH --gres=gpu:<<node-class>>:<<num-gpus>>
 #+END_SRC
 
 *** examples
+
+PBS:
 #+BEGIN_SRC bash
   #PBS -l feature='gpgpu:intel16'
+#+END_SRC
+
+SLURM:
+#+BEGIN_SRC bash
+  #SBATCH --gres=gpu:k80:8
 #+END_SRC
 
 
@@ -89,8 +92,7 @@ task is set up in.
 
 ** GNU module
 
-This is particular to the module loding system at the Michigan State
-University HPCC.
+Load modules using LMOD
 
 #+name: gnu-module
 #+BEGIN_SRC bash
@@ -99,8 +101,7 @@ University HPCC.
 
 ** CUDA module
 
-This is particular to the module loding system at the Michigan State
-University HPCC.
+Load modules using LMOD
 
 #+name: cuda-module
 #+BEGIN_SRC bash
@@ -139,7 +140,7 @@ When you export/tangle this script the named code blocks will be
 inserted into their targets marked by `<<my-target>>` for a target
 called `my-target`.
 
-#+BEGIN_SRC bash :tangle submit.pbs :noweb yes :shebang #!/bin/sh -login
+#+BEGIN_SRC bash :tangle submit.slurm :noweb yes :shebang #!/bin/sh -login
   #SBATCH --job-name <<task-name>>
   #SBATCH --time=<<walltime>>
   #SBATCH --nodes=<<num-nodes>>
@@ -147,14 +148,13 @@ called `my-target`.
   #SBATCH --cpus-per-task=<<num-processors>>
   #SBATCH --mem-per-cpu=<<memory>>
   #SBATCH --tmp=<<disk-space>>
-  #SBATCH --gres=gpu:<<node-class>>:<<num-gpus>>
   #SBATCH --mail-user=<<email>>
-  #SBATCH --mail-type=BEGIN:END
+  #SBATCH --mail-type=BEGIN,END
   #SBATCH --error=error
   #SBATCH --output=out
 
   # ------------------------------
-  # Script for running the task <<task-name>> with PBS on hpcc
+  # Script for running the task <<task-name>> with SLURM on hpcc
 
   # we print a simple confirmation to the terminal that we have started
   echo "Starting job"
@@ -171,13 +171,13 @@ called `my-target`.
   INPUTDIR=$TASKDIR/input
   # directory to put job results in
   JOBSDIR=$TASKDIR/jobs
-  # we should redirect our own output streams but we will catch the PBS
+  # we should redirect our own output streams but we will catch the SLURM
   # files as well
-  PBS_STDOUT=$PBS_O_WORKDIR/pbs.out
-  PBS_STDERR=$PBS_O_WORKDIR/pbs.err
+  SLURM_STDOUT=${SLURM_SUBMIT_DIR}/slurm.out
+  SLURM_STDERR=${SLURM_SUBMIT_DIR}/slurm.err
 
   # the job name
-  JOBNAME=${TASK}-${PBS_JOBID}
+  JOBNAME=${TASK}-${SLURM_JOBID}
   # the directory for the output of this job
   JOBDIR=$JOBSDIR/$JOBNAME
 
@@ -208,8 +208,8 @@ called `my-target`.
   # make these directories if they do not exist
   mkdir -p $JOBDIR
   mkdir -p $EXECDIR
-  mkdir -p $PBS_STDOUT
-  mkdir -p $PBS_STDERR
+  mkdir -p $SLURM_STDOUT
+  mkdir -p $SLURM_STDERR
 
   # Starting the LOG file
   echo $DATE &> $LOG
@@ -218,9 +218,9 @@ called `my-target`.
   echo ""   &>> $LOG
 
   # write out explicitly the run parameters
-  echo "* PBS Directives" &>> $LOG
+  echo "* SLURM Directives" &>> $LOG
   echo "----------------------------------------"  &>> $LOG
-  echo "PBS Resource requests" &>> $LOG
+  echo "SLURM Resource requests" &>> $LOG
   echo "----------------------------------------" &>> $LOG
 
   echo "" &>> $LOG
@@ -240,7 +240,7 @@ called `my-target`.
 
   echo "" &>> $LOG
   echo "LOG $LOG" &>> $LOG
-  echo "PBS_JOBID $PBS_JOBID" &>> $LOG
+  echo "SLURM_JOBID $SLURM_JOBID" &>> $LOG
   echo "TASK $TASK" &>> $LOG
   echo "TASKDIR $TASKDIR" &>> $LOG
   echo "INPUTDIR $INPUTDIR" &>> $LOG
@@ -251,43 +251,36 @@ called `my-target`.
   echo "EXECDIR $EXECDIR" &>> $LOG
   echo "STDOUT $STDOUT" &>> $LOG
   echo "STDERR $STDERR" &>> $LOG
-  echo "PBS_STDOUT $PBS_STDOUT" &>> $LOG
-  echo "PBS_STDERR $PBS_STDERR" &>> $LOG
-  echo "PBS_NODEFILE" &>> $LOG
-  cat $PBS_NODEFILE &>> $LOG
+  echo "SLURM_STDOUT $SLURM_STDOUT" &>> $LOG
+  echo "SLURM_STDERR $SLURM_STDERR" &>> $LOG
+  echo "SLURM_NODELIST" $SLURM_NODELIST &>> $LOG
   echo ""  &>> $LOG
 
-  # saving PBS environmental variables
+  # saving SLURM environmental variables
   echo "* Environmental Variables" &>> $LOG
   echo "----------------------------------------"  &>> $LOG
-  echo "PBS Environmental Variables" &>> $LOG
+  echo "SLURM Environmental Variables" &>> $LOG
   echo "----------------------------------------" &>> $LOG
 
   echo ""   &>> $LOG
-  # PBS env vars
-  echo "PBS ENV:"  &>> $LOG
-  env | grep PBS  &>> $LOG
+  # SLURM env vars
+  echo "SLURM ENV:"  &>> $LOG
+  env | grep SLURM  &>> $LOG
 
-  # PBS JOBID number
-  echo "* PBS Job info" &>> $LOG
-  echo "PBS_JOBID number"  &>> $LOG
-  PBS_JOBID_NUM=(${PBS_JOBID//./ })
-  echo "PBS_JOBID_NUM: $PBS_JOBID_NUM" &>> $LOG
+  # SLURM JOBID number
+  echo "* SLURM Job info" &>> $LOG
+  echo "SLURM_JOBID number"  &>> $LOG
+  SLURM_JOBID_NUM=(${SLURM_JOBID//./ })
+  echo "SLURM_JOBID_NUM: $SLURM_JOBID_NUM" &>> $LOG
 
-  # PBS stdout and stderr file paths
-  PBS_JOB_STDOUT="$PBS_STDOUT/$TASK.o$PBS_JOBID_NUM"
-  PBS_JOB_STDERR="$PBS_STDERR/$TASK.e$PBS_JOBID_NUM"
+  # SLURM stdout and stderr file paths
+  SLURM_JOB_STDOUT="$SLURM_STDOUT/$TASK.o$SLURM_JOBID_NUM"
+  SLURM_JOB_STDERR="$SLURM_STDERR/$TASK.e$SLURM_JOBID_NUM"
 
-  # NODEFILE
-  echo "PBS_NODEFILE:"  &>> $LOG
-  cat $PBS_NODEFILE  &>> $LOG
-  # GPUFILE
-  echo "PBS_GPUFILE:"  &>> $LOG
-  cat $PBS_GPUFILE  &>> $LOG
-  # MICFILE
-  echo "PBS_MICFILE:"  &>> $LOG
-  cat $PBS_MICFILE  &>> $LOG
-  echo ""  &>> $LOG
+  # NODELIST
+  echo "SLURM_NODELIST:"  &>> $LOG
+  cat $SLURM_NODELIST  &>> $LOG
+
 
   # initial
   echo "* Environment Initialization" &>> $LOG
@@ -354,7 +347,7 @@ called `my-target`.
 
   # copy the actual submission script used
   echo "------------" &>> $LOG
-  echo "Copying submission script ${TASKDIR}/${PBS_JOBNAME} to EXECDIR: $EXECDIR" &>> $LOG
+  echo "Copying submission script ${TASKDIR}/${SLURM_JOB_NAME} to EXECDIR: $EXECDIR" &>> $LOG
   echo "------------" &>> $LOG
   cp "${0}" $EXECDIR/ &>> $LOG
   echo "" &>> $LOG
@@ -428,14 +421,14 @@ called `my-target`.
   echo ""   &>> $LOG
 
 
-  # move the PBS stdout and stderr files to the jobdir
+  # move the SLURM stdout and stderr files to the jobdir
   echo "------------" &>> $LOG
-  echo "PBS STDOUT is in $PBS_JOB_STDOUT" &>> $LOG
+  echo "SLURM STDOUT is in $SLURM_JOB_STDOUT" &>> $LOG
   echo "------------" &>> $LOG
   echo ""   &>> $LOG
 
   echo "------------" &>> $LOG
-  echo "PBS STDERR $PBS_JOB_STDERR" &>> $LOG
+  echo "SLURM STDERR $SLURM_JOB_STDERR" &>> $LOG
   echo "------------" &>> $LOG
 
   # The last thing we do is move the log file to the output
