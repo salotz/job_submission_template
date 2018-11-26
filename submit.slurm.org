@@ -278,9 +278,7 @@ called `my-target`.
   SLURM_JOB_STDERR="$SLURM_STDERR/$TASK.e$SLURM_JOBID_NUM"
 
   # NODELIST
-  echo "SLURM_NODELIST:"  &>> $LOG
-  cat $SLURM_NODELIST  &>> $LOG
-
+  echo "SLURM_NODELIST: $SLURM_NODELIST"  &>> $LOG
 
   # initial
   echo "* Environment Initialization" &>> $LOG
@@ -300,7 +298,7 @@ called `my-target`.
   echo "------------" &>> $LOG
   echo "RUNNING: source /opt/software/modulefiles/setup_modules.sh" &>> $LOG
   echo "------------" &>> $LOG
-  source /opt/software/modulefiles/setup_modules.sh &>> $LOG
+  #source /opt/software/modulefiles/setup_modules.sh &>> $LOG
   echo "" &>> $LOG
 
   # load specific library modules
