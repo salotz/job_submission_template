@@ -146,8 +146,8 @@ called `my-target`.
   #PBS -l nodes=<<num-nodes>>:ppn=<<num-processors>>
   <<num-gpus>>
   <<feature>>
-  #PBS -e pbs.err
-  #PBS -o pbs.out
+  #PBS -e error
+  #PBS -o out
   #PBS -M <<email>>
   #PBS -m abe
 

@@ -1,0 +1,113 @@
+
+
+* Managing Job Queue Submissions
+
+The goal of this project is to have a ready made template for managing
+the submission of a task on job queueing systems for shared computing
+resources that use Torque/PBS and SLURM.
+
+The "task" is the goal of running some code with particular inputs to
+get a usable or correct result.
+
+"Jobs" refer to things submitted to a job queue system (e.g. SLURM).
+
+Because people who write code aren't perfect, code is hard to write,
+and computers are picky this usually takes multiple tries to
+accomplish. This framework accomodates this and makes it easy to retry
+job submissions by organizing the results by the job identifiers.
+
+Additionally once a "pipeline" has been debugged you may want to run
+code multiple times if there are random numbers used to see if you get
+different results.
+
+* Using this template
+
+Either clone or copy the main directory into the location you want it.
+
+Each instance of this main directory corresponds to a task. You can
+(and should) rename it if you like.
+
+Then edit the file that ends in the "org" extension.
+
+This is an [[https://www.gnu.org/software/emacs/][emacs]] [[http://orgmode.org/][org-mode]] file that uses [[https://www.cs.tufts.edu/~nr/noweb/][noweb]] (markup for literate
+programming).
+
+Noweb annotations (names surrounded by double angle brackets
+'=<<thing>>=') are filled with the strings you need to customize your
+script.
+
+That means you only need to specify small amounts of information and
+let the script do the rest.
+
+The benefit of this approach is that (opposed to writing a script with
+arguments) you can manually fill it in if you don't like it.
+
+The organizational part is really the useful part here.
+
+So either manually replace the double angle brackets with your data or
+write them into the blocks at the top of the org mode file, where the
+names match the noweb fields.
+
+Then you 'tangle' the document to generate a script by either using
+the emacs command (if you like to edit things with emacs):
+
+~C-c C-v t~ 
+
+Or use the script provided:
+#+BEGIN_SRC bash
+./org-tangle.sh submit.slurm.org
+#+END_SRC
+
+You will need emacs installed either way.
+
+I suppose you could also very easily just use noweb itself as well.
+
+Then you should submit your jobs from the task directory.
+
+Your job will then get its own directory in 'jobs'
+
+When a job submission script is run the contents of 'input' is copied
+to the job directory into a new dir called 'exec' which exists for the
+life of the job. Once the job has successfully completed it will be
+renamed to output.
+
+There will also be a log file which contains every small detail you
+could probably ever care about your job. Very useful for debugging
+fussy computer systems.
+
+Any error or output streams that aren't caught by the LOG are sent to
+the 'error' and 'output' dirs in the task directory. If you started
+the job from somewhere other than the task dir then there will be
+files called 'error' and 'output' there due to the way the submission
+calls are made.
+
+So just submit jobs from the task directory and you will be fine.
+
+** Summary
+
+#+BEGIN_SRC bash
+git clone git@github.com:salotz/job_submission_templates.git
+mkdir -p ~/projects/project_a
+cp job_submission_templates ~/projects/project_a/
+cd ~/projects/project_a
+cp job_submission_tempates task_a
+cd task_a
+#+END_SRC
+
+Edit the org mode file and place input files into the input directory,
+this includes any business logic "scripts" you are calling from the
+job submission script itself.
+
+Then tangle the file to the actual submission script and submit it.
+
+For Torque PBS:
+#+BEGIN_SRC bash
+./org-tangle.sh submit.pbs.org
+qsub submit.pbs
+#+END_SRC
+
+And for SLURM:
+#+BEGIN_SRC bash
+./org-tangle.sh submit.slurm.org
+sbatch submit.slurm
+#+END_SRC
