@@ -147,11 +147,10 @@ called `my-target`.
   #SBATCH --ntasks=<<num-nodes>>
   #SBATCH --cpus-per-task=<<num-processors>>
   #SBATCH --mem-per-cpu=<<memory>>
-  #SBATCH --tmp=<<disk-space>>
   #SBATCH --mail-user=<<email>>
   #SBATCH --mail-type=BEGIN,END
-  #SBATCH --error=error
-  #SBATCH --output=out
+  #SBATCH --error="error/slurm-%j.err"
+  #SBATCH --output="out/slurm-%j.out"
 
   # ------------------------------
   # Script for running the task <<task-name>> with SLURM on hpcc
